@@ -88,3 +88,13 @@ public static class DataLoader
             yield return (line, i + 1);
         }
     }
+    private static double ParseDouble(string s, string path, int line)
+        => double.TryParse(s.Trim(), NumberStyles.Float, Inv, out var v)
+            ? v
+            : throw new FormatException($"{path}, строка {line}: «{s.Trim()}» — не число.");
+
+    private static int ParseInt(string s, string path, int line)
+        => int.TryParse(s.Trim(), NumberStyles.Integer, Inv, out var v)
+            ? v
+            : throw new FormatException($"{path}, строка {line}: «{s.Trim()}» — не целое число.");
+}
