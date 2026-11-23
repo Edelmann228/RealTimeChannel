@@ -98,3 +98,44 @@ static void PrintTable(IReadOnlyList<MessageResult> results)
     Console.WriteLine(separator);
     Console.WriteLine();
 }
+static void PrintConclusion(
+    IReadOnlyList<MessageResult> results,
+    IReadOnlyList<Message> messages,
+    Channel channel)
+{
+    double jitterFree = Calculations.Jitter(results.Select(r => r.DelayMs));
+    double jitterArb = Calculations.Jitter(results.Select(r => r.ArbitrationMs));
+    double utilization = Calculations.Utilization(messages, channel);
+
+    Console.WriteLine("=== Заключение ===");
+    Console.WriteLine($"Джиттер без конкуренции:       {jitterFree:0.###} мс");
+    Console.WriteLine($"Джиттер при арбитраже:         {jitterArb:0.###} мс");
+    Console.WriteLine($"Загрузка канала:               {utilization * 100:0.#} %");
+
+    var worst = results.MaxBy(r => r.ArbitrationMs)!;
+    var best = results.MinBy(r => r.ArbitrationMs)!;
+    double extra = worst.ArbitrationMs - worst.DelayMs;
+
+    Console.WriteLine();
+    Console.WriteLine(
+        $"Приоритетный арбитраж: наихудшее время доставки у {worst.Message.Name} " +
+        $"(приоритет {worst.Message.Priority}) — {worst.ArbitrationMs:0.###} мс; " +
+        $"из них {extra:0.###} мс — ожидание более приоритетных сообщений. " +
+        $"У {best.Message.Name} (приоритет {best.Message.Priority}) доставка занимает " +
+        $"{best.ArbitrationMs:0.###} мс.");
+
+    var failed = results.Where(r => !r.MeetsDeadline).ToList();
+    if (failed.Count == 0)
+    {
+        Console.WriteLine("Все сообщения укладываются в свои дедлайны.");
+    }
+    else
+    {
+        Console.WriteLine("Дедлайн НЕ выдерживают: " +
+            string.Join(", ", failed.Select(r =>
+                $"{r.Message.Name} ({r.ArbitrationMs:0.###} мс > {r.Message.DeadlineMs:0.###} мс)")) + ".");
+    }
+
+    if (utilization > 1.0)
+        Console.WriteLine("Внимание: загрузка канала превышает 100 % — расписание невыполнимо.");
+}
