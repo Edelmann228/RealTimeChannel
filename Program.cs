@@ -51,3 +51,50 @@ static string ResolvePath(string path)
     string alt = Path.Combine(AppContext.BaseDirectory, path);
     return File.Exists(alt) ? alt : path;
 }
+static void PrintChannel(Channel c)
+{
+    Console.WriteLine("=== Параметры канала ===");
+    Console.WriteLine($"Скорость передачи:        {c.BitrateBps:N0} бит/с".Replace(',', ' '));
+    Console.WriteLine($"Задержка распространения: {c.PropagationDelayMs:0.###} мс");
+    Console.WriteLine($"Задержка обработки:       {c.ProcessingDelayMs:0.###} мс");
+    Console.WriteLine();
+}
+
+static void PrintTable(IReadOnlyList<MessageResult> results)
+{
+    Console.WriteLine("=== Результаты расчёта ===");
+
+    string[] headers =
+    {
+        "Сообщение", "Приоритет", "Размер, бит", "Время передачи, мс",
+        "Задержка доставки, мс", "Доставка с арбитражем, мс", "Дедлайн, мс", "Уложилось"
+    };
+
+    var rows = results.Select(r => new[]
+    {
+        r.Message.Name,
+        r.Message.Priority.ToString(),
+        r.Message.SizeBits.ToString(),
+        r.TransmissionMs.ToString("0.###"),
+        r.DelayMs.ToString("0.###"),
+        r.ArbitrationMs.ToString("0.###"),
+        r.Message.DeadlineMs.ToString("0.###"),
+        r.MeetsDeadline ? "да" : "НЕТ"
+    }).ToList();
+
+    int[] widths = headers.Select((h, i) =>
+        Math.Max(h.Length, rows.Max(row => row[i].Length))).ToArray();
+
+    string Line(string[] cells) =>
+        "| " + string.Join(" | ", cells.Select((c, i) => c.PadRight(widths[i]))) + " |";
+
+    string separator = "+-" + string.Join("-+-", widths.Select(w => new string('-', w))) + "-+";
+
+    Console.WriteLine(separator);
+    Console.WriteLine(Line(headers));
+    Console.WriteLine(separator);
+    foreach (var row in rows)
+        Console.WriteLine(Line(row));
+    Console.WriteLine(separator);
+    Console.WriteLine();
+}
