@@ -73,3 +73,18 @@ public static class DataLoader
 
         return result;
     }
+    /// <summary>Строки файла без заголовка, пустых строк и комментариев (#).</summary>
+    private static IEnumerable<(string Line, int Number)> ReadDataLines(string path)
+    {
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"Файл не найден: {path}");
+
+        var lines = File.ReadAllLines(path);
+        for (int i = 1; i < lines.Length; i++) // i = 0 — заголовок
+        {
+            string line = lines[i].Trim();
+            if (line.Length == 0 || line.StartsWith('#'))
+                continue;
+            yield return (line, i + 1);
+        }
+    }
