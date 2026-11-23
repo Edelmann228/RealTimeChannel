@@ -26,8 +26,18 @@ public static class Calculations
 
         return waiting + DeliveryDelay(msg, channel);
     }
-
+    /// Джиттер как разброс времени доставки: max − min.
+    public static double Jitter(IEnumerable<double> delays)
+    {
+        var list = delays.ToList();
+        return list.Count == 0 ? 0.0 : list.Max() - list.Min();
+    }
 
     /// Укладывается ли время доставки в дедлайн сообщения.
     public static bool MeetsDeadline(Message msg, double deliveryTimeMs)
         => deliveryTimeMs <= msg.DeadlineMs;
+
+    /// Загрузка канала: сумма (время передачи / период) по всем сообщениям.
+    public static double Utilization(IEnumerable<Message> msgs, Channel channel)
+        => msgs.Sum(m => TransmissionTime(m, channel) / m.PeriodMs);
+}
