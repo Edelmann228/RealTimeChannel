@@ -39,3 +39,37 @@ public static class DataLoader
 
         return channel;
     }
+    /// <summary>
+    /// Формат: заголовок "name,priority,size_bits,period_ms,deadline_ms".
+    /// Если deadline_ms пуст — дедлайн равен периоду.
+    /// </summary>
+    public static List<Message> LoadMessages(string path)
+    {
+        var result = new List<Message>();
+
+        foreach (var (line, number) in ReadDataLines(path))
+        {
+            var p = line.Split(',');
+            if (p.Length < 4)
+                throw new FormatException(
+                    $"{path}, строка {number}: ожидается name,priority,size_bits,period_ms[,deadline_ms].");
+
+            string name = p[0].Trim();
+            int priority = ParseInt(p[1], path, number);
+            int sizeBits = ParseInt(p[2], path, number);
+            double period = ParseDouble(p[3], path, number);
+            double deadline = p.Length > 4 && !string.IsNullOrWhiteSpace(p[4])
+                ? ParseDouble(p[4], path, number)
+                : period;
+
+            if (sizeBits <= 0 || period <= 0 || deadline <= 0)
+                throw new FormatException($"{path}, строка {number}: размер, период и дедлайн должны быть > 0.");
+
+            result.Add(new Message(name, priority, sizeBits, period, deadline));
+        }
+
+        if (result.Count == 0)
+            throw new FormatException($"{path}: нет ни одного сообщения.");
+
+        return result;
+    }
