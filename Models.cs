@@ -11,8 +11,16 @@ public sealed record Message(
     double PeriodMs,
     double DeadlineMs);
 
-/// <summary>Параметры канала передачи данных.</summary>
+/// Параметры канала передачи данных.
 public sealed record Channel(
     double BitrateBps,
     double PropagationDelayMs,
     double ProcessingDelayMs);
+
+/// Результат расчёта по одному сообщению .
+public sealed record MessageResult(
+    Message Message,
+    double TransmissionMs,
+    double DelayMs,
+    double ArbitrationMs,
+    bool MeetsDeadline);
